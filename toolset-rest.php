@@ -37,11 +37,14 @@ function toolset_rest_activation(){
 		define( 'TOOLSET_REST_VERSION', '1.0' );
 		define( 'TOOLSET_REST_INC_PATH', dirname( __FILE__ ) . '/includes' );
 		define( 'TOOLSET_REST_PATH', dirname( __FILE__ ) );
-		define( 'TOOLSET_REST_FOsLDER', basename(TOOLSET_REST_PATH) );
+		define( 'TOOLSET_REST_FOLDER', basename(TOOLSET_REST_PATH) );
 		define( 'TOOLSET_REST_URL', plugins_url() . '/'. TOOLSET_REST_FOLDER );
 		define( 'TEXTDOMAIN', 'toolset-rest' );
 
 		require_once(TOOLSET_REST_INC_PATH . '/toolset-rest-functions.php');
+		require_once(TOOLSET_REST_INC_PATH . '/class-toolset-post.php');
+		require_once(TOOLSET_REST_INC_PATH . '/class-toolset-taxonomy.php');
+		require_once(TOOLSET_REST_INC_PATH . '/class-toolset-user.php');
 	}
 }
 

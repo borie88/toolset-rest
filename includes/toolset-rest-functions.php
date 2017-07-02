@@ -1,6 +1,6 @@
 <?php
 	
-class Toolset_Rest extends WP_REST_Posts_Controller {
+class Toolset_Rest extends WP_REST_Controller {
 	function __construct() {
 		add_action( 'init', array( $this, 'init' ) );
 	}
@@ -28,6 +28,8 @@ class Toolset_Rest extends WP_REST_Posts_Controller {
 				$wpdb->posts WHERE post_name = %s", $request_param_id ) );
 				$view_id = $view_by_name->ID;
 			}
+			$settings = get_post_meta( $view_id, '_wpv_settings', true );
+			$query_type = $settings['query_type'][0];
 		}
 
 		//Handling the GET parameters to fit into the View $args
@@ -43,13 +45,23 @@ class Toolset_Rest extends WP_REST_Posts_Controller {
 		add_filter( 'wpv_filter_query', array( $this, 'toolset_rest_query_filter' ), 99, 3 );
 
 		if ( function_exists( 'get_view_query_results' ) ) {
+			///Use our query type to decide whether we should get posts, terms, or users...
 			$view_results = get_view_query_results( $view_id, $post_in, $current_user_in, $args );
-			$data = [];
-			foreach ( $view_results as $item ) {
-				$this->post_type = $item->post_type;
-				$item = $this->prepare_item_for_response ( $item, $request );
-            	$data[] = $this->prepare_response_for_collection ( $item );
+			if ( 'posts' === $query_type ) {
+				$data = new Toolset_Post( $view_results );
+				$data = $data->get_list();
 			}
+
+			if ( 'taxonomy' === $query_type ) {
+				$data = new Toolset_Taxonomy( $view_results );
+				$data = $data->get_list();
+			}
+
+			if ( 'users' === $query_type ) {
+				$data = new Toolset_User( $view_results );
+				$data = $data->get_list();
+			}
+
 			$response = rest_ensure_response( $data );
 			return $response;
 		}
