@@ -1,6 +1,6 @@
 <?php
 	
-class Toolset_Rest extends WP_REST_Request {
+class Toolset_Rest extends WP_REST_Posts_Controller {
 	function __construct() {
 		add_action( 'init', array( $this, 'init' ) );
 	}
@@ -18,12 +18,12 @@ class Toolset_Rest extends WP_REST_Request {
 		global $wpdb;
 
 		// Retrieving the View ID
-		if( null !== $request->get_param( 'id' )){
+		if ( null !== $request->get_param( 'id' )){
 			$request_param_id = $request->get_param( 'id' );
 			$view = get_post( $request_param_id );
-			if( $view != null ){
+			if ( $view != null ){
 				$view_id = $view->ID;
-			}else{
+			} else {
 				$view_by_name = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM 
 				$wpdb->posts WHERE post_name = %s", $request_param_id ) );
 				$view_id = $view_by_name->ID;
@@ -31,22 +31,28 @@ class Toolset_Rest extends WP_REST_Request {
 		}
 
 		//Handling the GET parameters to fit into the View $args
-		if ($request->params['GET'] &&
-		   !empty( $request->params['GET'] )){
-			$get_params = $request->params['GET'];
-			foreach ($get_params as $key => $value) {
-				$args[$key] = $value;
+		if ( $request->get_params() &&
+		   !empty( $request->get_params() ) ){
+			$get_params = $request->get_params();
+			foreach ( $get_params as $key => $value ) {
+				$args[ $key ] = $value;
 			}
 		}
 
 		// It lets you change the query only in the custom Rest Route
 		add_filter( 'wpv_filter_query', array( $this, 'toolset_rest_query_filter' ), 99, 3 );
 
-		if (function_exists('get_view_query_results')) {
-			$view_results = get_view_query_results($view_id, $post_in, $current_user_in, $args);
+		if ( function_exists( 'get_view_query_results' ) ) {
+			$view_results = get_view_query_results( $view_id, $post_in, $current_user_in, $args );
+			$data = [];
+			foreach ( $view_results as $item ) {
+				$this->post_type = $item->post_type;
+				$item = $this->prepare_item_for_response ( $item, $request );
+            	$data[] = $this->prepare_response_for_collection ( $item );
+			}
+			$response = rest_ensure_response( $data );
+			return $response;
 		}
-
-		return $view_results;
 	}
 
 	function toolset_rest_query_filter( $query_args, $view_settings, $view_id ) {
